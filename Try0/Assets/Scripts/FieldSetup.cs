@@ -48,40 +48,62 @@ public class FieldSetup : MonoBehaviour
                         occupied[i,j] = 0;
                     }
                 }
-
                 //control empty percentage
                 for(int j = 0; j < 9; j++){
                     if(platform[j] != 0){
                         if(CheatRdm() != 0){
                             platform[j] = 0;
                             occupied[i, j] = 0;
+                            filler[j] = 0;
+                            decoration[j] = 0;
                         }
                     }
                 }
-                
                 //make sure each level there is at least one platform
                 int exi = 0;
                 for(int j = 0; j < 9; j++){
                     if(platform[j] != 0){
-                        exi = 1;
+                        exi++;
+                    }
+                    if(exi == 2){
                         break;
                     }
                 }
-                if(exi == 0){
-                    exi = rdm.Next(0, 9);
-                    platform[exi] = 0;
-                    occupied[i, exi] = 0;
+                int temp;
+                if(exi < 2){
+                    temp = rdm.Next(0, 9);
+                    while(exi < 2 || occupied[i, exi] == 1){
+                        temp = rdm.Next(0, 9);
+                    }
+                    exi++;
+                    platform[temp] = 0;
+                    occupied[i, temp] = 0;
+                }
+
+                for(int j = 0; j < 9; j++){
+                    Debug.Log("j: "+j+", occupied["+i+", "+j+"]: "+occupied[i, j]+"; platform["+i+", "+j+"]: "+platform[j]);
                 }
 
                 //place the prefabs
                 generateField(platform, filler, decoration, i, k);
+                //generateStairs(occupied, i, k);
             }
-            generateStairs(occupied);
+            /*for(int i = 0; i < 3; i++){
+                for(int j = 0; j < 9; j++){
+                    if(occupied[i, j] == 1){
+                        Debug.Log("level "+i+", position "+j+", occupied");
+                    }
+                }
+            }*/
+
+            generateStairs(occupied, k);
         }    
     }
 
     void generateField(int [] platform, int [] filler, int [] decoration, int level, int scene)
     {
+        Debug.Log("in generateField");
+
         int x, y;
         int xCoor, zCoor;
         y = (level+1)*levelHeight;
@@ -116,88 +138,114 @@ public class FieldSetup : MonoBehaviour
 
             xCoor = ((i % 3) * 20 + x);
             zCoor = ((i/3)*20 + baseZCoor);
-            Debug.Log("level: "+level+", scene: "+scene+", i: "+ i +", xCoor: "+ xCoor+", zCoor: "+zCoor);
+            //Debug.Log("level: "+level+", scene: "+scene+", i: "+ i +", xCoor: "+ xCoor+", zCoor: "+zCoor);
             
             Vector3 posPlatform = new Vector3(xCoor, y, zCoor);
-            Quaternion rotPlatform = new Quaternion();
-
             if(platform[i] != 0){
                 GameObject tempPlatform = Instantiate(platformFloor, posPlatform, rot);
             }      
         }
     }
 
-    void generateStairs(int [,] occupied)
+    void generateStairs(int [,] occupied, int scene)
     {
-        int[] occupied1 = new int [9];
-        int[] occupied2 = new int [9];
-        int[] occupied3 = new int [9];
-
+        Debug.Log("in generateStairs");
         for(int i = 0; i < 3; i++){
             for(int j = 0; j < 9; j++){
-                if(i == 0){
-                    occupied1[j] = occupied[i,j];
-                }
-                if(i == 1){
-                    occupied2[j] = occupied[i,j];
-                }
-                if(i == 2){
-                    occupied3[j] = occupied[i,j];
+                if(occupied[i, j] == 1){
+                    Debug.Log("level "+i+", position "+j+", occupied");
                 }
             }
         }
 
-        //init
-        int[,] saturated = new int[3,9];
-        for(int i = 0; i < 3; i++){
-            for(int j = 0; j < 9; j++){
-                saturated[i,j] = 0;
-            }
-        }
 
-        System.Random rdm = new System.Random();
+        //first number on level i, second number on level i-1
+        int[,] edge10 = new int[9,9];
+        int[,] edge21 = new int[9,9];
+        int[,] edge32 = new int[9,9];
+        int[,] addStairs = new int[3,2];
+        int level = 0;
+        int finished = 0;
         int temp;
-        //add edges in graph
-        for(int i = 0; i < 3; i++){
-            for(int j = 0; j < 9; j++){
-                if(occupied[i,j] == 0){
-                    continue;
-                }
-                Debug.Log(CheckAdjacent(j));
+        System.Random rdm = new System.Random();
+
+        //stairs[level, 0]: on level level, platform stairs[level, 0] will have a stair to level level-1
+        //checkpriority will return which platform the stairs should point to on level level-1
+        while(finished == 0){
+            temp = rdm.Next(0, 9);
+            while(occupied[level, temp] == 0){
+                temp = rdm.Next(0, 9);
+            }
+            addStairs[level, 0] = temp;
+            temp = rdm.Next(0, 9);
+            while(occupied[level, temp] == 0 || temp == addStairs[level, 0]){
+                temp = rdm.Next(0, 9);
+            }
+            addStairs[level, 1] = temp;
+
+            //Debug.Log("level: "+level + ", first starting node: "+ addStairs[level, 0] + ", second starting node is: " + addStairs[level, 1]);
+            //Debug.Log("emptiness: occupied["level+","+addStairs[level, 0]+"]: "+ occupied[level, addStairs[level, 0]]+", occupied["+level+","+ addStairs[level, 1]+"]: "+ occupied[level, addStairs[level, 1]]);
+
+            if(level == 2){
+                edge32[addStairs[level, 0], CheckPriority(addStairs[level, 0], occupied, level)] = 1;
+                edge32[addStairs[level, 1], CheckPriority(addStairs[level, 1], occupied, level)] = 1;
+                finished = 1;
+            }   
+            if(level == 1){
+                edge21[addStairs[level, 0], CheckPriority(addStairs[level, 0], occupied, level)] = 1;
+                edge21[addStairs[level, 1], CheckPriority(addStairs[level, 1], occupied, level)] = 1;
+                level = 2;
+            }
+            if(level == 0){
+                edge10[addStairs[level, 0], CheckPriority(addStairs[level, 0], occupied, level)] = 1;
+                edge10[addStairs[level, 1], CheckPriority(addStairs[level, 1], occupied, level)] = 1;
+                level = 1;
             }
         }
-    }
+    }      
 
-    int[] CheckAdjacent(int i)
+    //return which platform on level level-1 should the stair starts from level level platform i points to
+    int CheckPriority(int a, int[,] occupied, int level)
     {
-        int[] ans = new int[2];
-        if(i == 0){
-            ans = new int[2] {1,3};
+        int ans = 4;
+        int[] priority1 = new int[8] {7,6,8,3,5,1,2,0};
+        int[] priority3 = new int[8] {5,8,2,1,7,3,6,0};
+        int[] priority5 = new int[8] {3,0,6,7,1,5,2,8};
+        int[] priority7 = new int[8] {1,2,0,5,3,7,8,6};
+
+        if(a == 0 || a == 1){
+            for(int i = 0; i < priority1.Length; i++){
+                if(occupied[level, priority1[i]] != 0){
+                    Debug.Log("starting node is: "+ a + " returned: "+ priority1[i]);
+                    return priority1[i];
+                }
+            }
         }
-        if(i == 1){
-            ans = new int[2] {0,2};
+        if(a == 2 || a == 5){
+            for(int i = 0; i < priority5.Length; i++){
+                if(occupied[level, priority5[i]] != 0){
+                    Debug.Log("starting node is: "+ a + " returned: "+ priority5[i]);
+                    return priority5[i];
+                }
+            }
         }
-        if(i == 2){
-            ans = new int[2] {1,5};
+        if(a == 8 || a == 7){
+            for(int i = 0; i < priority7.Length; i++){
+                if(occupied[level, priority7[i]] != 0){
+                    Debug.Log("starting node is: "+ a + " returned: "+ priority7[i]);
+                    return priority7[i];
+                }
+            }
         }
-        if(i == 3){
-            ans = new int[2] {0,6};
+        if(a == 6 || a == 3){
+            for(int i = 0; i < priority3.Length; i++){
+                if(occupied[level, priority3[i]] != 0){
+                    Debug.Log("starting node is: "+ a + " returned: "+ priority3[i]);
+                    return priority3[i];
+                }
+            }
         }
-        if(i == 4){
-            ans = new int[2] {4,4};
-        }
-        if(i == 5){
-            ans = new int[2] {2,8};
-        }
-        if(i == 6){
-            ans = new int[2] {3,7};
-        }
-        if(i == 7){
-            ans = new int[2] {6,8};
-        }
-        if(i == 8){
-            ans = new int[2] {5,7};
-        }
+
         return ans;
     }
 
