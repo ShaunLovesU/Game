@@ -353,6 +353,8 @@
 -r:"Library/Bee/artifacts/200b0aE.dag/UnityEditor.UI.ref.dll"
 -r:"Library/Bee/artifacts/200b0aE.dag/UnityEngine.UI.ref.dll"
 "Assets/Scripts/BuildStairs.cs"
+"Assets/Scripts/CameraFollowPlayer.cs"
+"Assets/Scripts/CameraViewRotate.cs"
 "Assets/Scripts/FieldSetup.cs"
 "Assets/Scripts/PlayerMovement.cs"
 -langversion:9.0

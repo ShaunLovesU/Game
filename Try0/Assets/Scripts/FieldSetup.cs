@@ -12,6 +12,8 @@ public class FieldSetup : MonoBehaviour
     public GameObject floor;
     public GameObject platformFloor;
     public GameObject wall;
+    public GameObject bridge;
+    public GameObject connector;
 
     public int baseXCoor = -20;
     public int baseZCoor = -20;
@@ -30,7 +32,7 @@ public class FieldSetup : MonoBehaviour
         int[,] occupied = new int[3,9];
 
         //5 scenes
-        for(int k = 0; k < 5; k++){
+        //for(int k = 0; k < 5; k++){
         //each scene, three levels; each level, eight platform slots
             for(int i = 0; i < 3; i++){
                 //platform: generate base platform type
@@ -51,7 +53,7 @@ public class FieldSetup : MonoBehaviour
                 //control empty percentage
                 for(int j = 0; j < 9; j++){
                     if(platform[j] != 0){
-                        if(CheatRdm() != 0){
+                        if(CheatRdm() != 0 || j == 4){
                             platform[j] = 0;
                             occupied[i, j] = 0;
                             filler[j] = 0;
@@ -59,7 +61,7 @@ public class FieldSetup : MonoBehaviour
                         }
                     }
                 }
-                //make sure each level there is at least one platform
+                //make sure each level there is at least 2 platform
                 int exi = 0;
                 for(int j = 0; j < 9; j++){
                     if(platform[j] != 0){
@@ -76,27 +78,21 @@ public class FieldSetup : MonoBehaviour
                         temp = rdm.Next(0, 9);
                     }
                     exi++;
-                    platform[temp] = 0;
-                    occupied[i, temp] = 0;
+                    //Debug.Log("in start(), the second filler platform is number "+temp);
+                    platform[temp] = rdm.Next(1,4);
+                    occupied[i, temp] = 1;
                 }
 
-                for(int j = 0; j < 9; j++){
+                /*for(int j = 0; j < 9; j++){
                     Debug.Log("j: "+j+", occupied["+i+", "+j+"]: "+occupied[i, j]+"; platform["+i+", "+j+"]: "+platform[j]);
-                }
+                }*/
 
                 //place the prefabs
-                generateField(platform, filler, decoration, i, k);
-                //generateStairs(occupied, i, k);
-            }
-            /*for(int i = 0; i < 3; i++){
-                for(int j = 0; j < 9; j++){
-                    if(occupied[i, j] == 1){
-                        Debug.Log("level "+i+", position "+j+", occupied");
-                    }
-                }
-            }*/
-
-            generateStairs(occupied, k);
+                //generateField(platform, filler, decoration, i, k);
+                //generateStairs(platform, i, k);
+                generateField(platform, filler, decoration, i, 0);
+                generateStairs(platform, i, 0);
+            //}
         }    
     }
 
@@ -104,6 +100,7 @@ public class FieldSetup : MonoBehaviour
     {
         Debug.Log("in generateField");
 
+        //generate the 5 scenes
         int x, y;
         int xCoor, zCoor;
         y = (level+1)*levelHeight;
@@ -118,7 +115,7 @@ public class FieldSetup : MonoBehaviour
         GameObject tempWall1 = Instantiate(wall, posWall1, rot);
         tempWall1.transform.Rotate(0, 0, 0, Space.World);
 
-        Vector3 posWall2 =  new Vector3(0f+scene*gapSize, 35.5f, -35.5f);
+        Vector3 posWall2 =  new Vector3(0f+scene*gapSize, 35.5f, 35.5f);
         GameObject tempWall2 = Instantiate(wall, posWall2, rot);
         tempWall2.transform.Rotate(0, 90, 0, Space.World);
 
@@ -126,7 +123,7 @@ public class FieldSetup : MonoBehaviour
         GameObject tempWall3 = Instantiate(wall, posWall3, rot);
         tempWall3.transform.Rotate(0, 0, 0, Space.World);
 
-        Vector3 posWall4 =  new Vector3(0f+scene*gapSize, 35.5f, 35.5f);
+        Vector3 posWall4 =  new Vector3(0f+scene*gapSize, 35.5f, -35.5f);
         GameObject tempWall4 = Instantiate(wall, posWall4,rot);
         tempWall4.transform.Rotate(0, 90, 0, Space.World);
 
@@ -138,7 +135,7 @@ public class FieldSetup : MonoBehaviour
 
             xCoor = ((i % 3) * 20 + x);
             zCoor = ((i/3)*20 + baseZCoor);
-            //Debug.Log("level: "+level+", scene: "+scene+", i: "+ i +", xCoor: "+ xCoor+", zCoor: "+zCoor);
+            Debug.Log("level" + level + " ,position "+i+" occupied, type: "+platform[i]+", xCoor: "+ xCoor+", zCoor: "+zCoor);
             
             Vector3 posPlatform = new Vector3(xCoor, y, zCoor);
             if(platform[i] != 0){
@@ -147,61 +144,101 @@ public class FieldSetup : MonoBehaviour
         }
     }
 
-    void generateStairs(int [,] occupied, int scene)
+    void generateStairs(int [] platform, int level, int scene)
     {
-        Debug.Log("in generateStairs");
-        for(int i = 0; i < 3; i++){
-            for(int j = 0; j < 9; j++){
-                if(occupied[i, j] == 1){
-                    Debug.Log("level "+i+", position "+j+", occupied");
-                }
+        Debug.Log("in generateStairs()");
+
+        /*for(int i = 0; i < 9; i++){
+            if(platform[i]!=0){
+                Debug.Log("level" + level + " ,position "+i+" occupied");
             }
-        }
+        }*/
 
-
-        //first number on level i, second number on level i-1
-        int[,] edge10 = new int[9,9];
-        int[,] edge21 = new int[9,9];
-        int[,] edge32 = new int[9,9];
-        int[,] addStairs = new int[3,2];
-        int level = 0;
-        int finished = 0;
-        int temp;
+        //pick two platforms to connect to the 'elevator'
         System.Random rdm = new System.Random();
-
-        //stairs[level, 0]: on level level, platform stairs[level, 0] will have a stair to level level-1
-        //checkpriority will return which platform the stairs should point to on level level-1
-        while(finished == 0){
-            temp = rdm.Next(0, 9);
-            while(occupied[level, temp] == 0){
-                temp = rdm.Next(0, 9);
-            }
-            addStairs[level, 0] = temp;
-            temp = rdm.Next(0, 9);
-            while(occupied[level, temp] == 0 || temp == addStairs[level, 0]){
-                temp = rdm.Next(0, 9);
-            }
-            addStairs[level, 1] = temp;
-
-            //Debug.Log("level: "+level + ", first starting node: "+ addStairs[level, 0] + ", second starting node is: " + addStairs[level, 1]);
-            //Debug.Log("emptiness: occupied["level+","+addStairs[level, 0]+"]: "+ occupied[level, addStairs[level, 0]]+", occupied["+level+","+ addStairs[level, 1]+"]: "+ occupied[level, addStairs[level, 1]]);
-
-            if(level == 2){
-                edge32[addStairs[level, 0], CheckPriority(addStairs[level, 0], occupied, level)] = 1;
-                edge32[addStairs[level, 1], CheckPriority(addStairs[level, 1], occupied, level)] = 1;
-                finished = 1;
-            }   
-            if(level == 1){
-                edge21[addStairs[level, 0], CheckPriority(addStairs[level, 0], occupied, level)] = 1;
-                edge21[addStairs[level, 1], CheckPriority(addStairs[level, 1], occupied, level)] = 1;
-                level = 2;
-            }
-            if(level == 0){
-                edge10[addStairs[level, 0], CheckPriority(addStairs[level, 0], occupied, level)] = 1;
-                edge10[addStairs[level, 1], CheckPriority(addStairs[level, 1], occupied, level)] = 1;
-                level = 1;
-            }
+        int step1 = 4;
+        int step2 = 4;
+        //Debug.Log(platform.Length);
+        step1 = rdm.Next(0,9);
+        //Debug.Log(step1);
+        while(platform[step1] == 0){
+            step1 = rdm.Next(0,9);
         }
+        step2 = rdm.Next(0,9);
+        while(platform[step2] == 0 || step2 == step1){
+            step2 = rdm.Next(0,9);
+        }
+
+        
+
+        //add bridge from platforms to 'elevator'
+        int x, y;
+        int xCoor1 = 0;
+        int zCoor1 = 0;
+        int xCoor2 = 0;
+        int zCoor2 = 0;
+        y = (level+1)*levelHeight;
+        x = baseXCoor + scene*gapSize;
+        float[] degree = new float[9] {45f, 0f, -45f, 90f, 0f, -90f, 135f, 180f, -135f};
+        if(step1 == 0||step1 == 3|| step1 == 6){
+            xCoor1 = 20+x-12;
+        }
+        if(step1 == 1||step1 == 7){
+            xCoor1 = 20+x;
+        }
+        if(step1 == 2||step1 == 5|| step1 == 8){
+            zCoor1 = 20+x+12;
+        }
+        if(step1 == 0||step1 == 1|| step1 == 2){
+            zCoor1 = 20+baseZCoor+12;
+        }
+        if(step1 == 3||step1 == 5){
+            zCoor1 = 20+baseZCoor;
+        }
+        if(step1 == 6||step1 == 7|| step1 == 8){
+            zCoor1 = 20+baseZCoor-12;
+        }
+        if(step2 == 0||step2 == 3|| step2 == 6){
+            xCoor2 = 20+x-12;
+        }
+        if(step2 == 1||step2 == 7){
+            xCoor2 = 20+x;
+        }
+        if(step2 == 2||step2 == 5|| step2 == 8){
+            zCoor2 = 20+x+12;
+        }
+        if(step2 == 0||step2 == 1|| step2 == 2){
+            zCoor2 = 20+baseZCoor+12;
+        }
+        if(step2 == 3||step2 == 5){
+            zCoor2 = 20+baseZCoor;
+        }
+        if(step2 == 6||step2 == 7|| step2 == 8){
+            zCoor2 = 20+baseZCoor-12;
+        }
+        //xCoor = (20 + x - 12);
+        //zCoor = (20+baseZCoor + 12);
+
+        //Debug.Log("for position: " + step1 + ", xCoor: "+xCoor+", zCoor: "+zCoor);
+
+        Debug.Log("two steps are: "+step1+", "+step2);
+        Debug.Log("xCoor1: "+ xCoor1+", zCoor1: "+zCoor1);
+        Debug.Log("xCoor2: "+ xCoor2+", zCoor2: "+zCoor2);
+
+        Vector3 posBridge1 = new Vector3(xCoor1, y, zCoor1);
+        Vector3 posBridge2 = new Vector3(xCoor2, y, zCoor2);
+        Quaternion rot = new Quaternion ();
+        GameObject bridge1 = Instantiate(bridge, posBridge1, rot);
+        bridge1.transform.Rotate(0, degree[step1], 0, Space.World);
+        GameObject bridge2 = Instantiate(bridge, posBridge2, rot);
+        bridge2.transform.Rotate(0, degree[step2], 0, Space.World);
+
+        /*for(int i = 0; i < 9; i++){
+            //for(int j = 0; j < 2; j++){
+                Debug.Log(sign[i,0]);
+                Debug.Log(sign[i,1]);
+            //}
+        }*/
     }      
 
     //return which platform on level level-1 should the stair starts from level level platform i points to
