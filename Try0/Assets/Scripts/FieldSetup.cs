@@ -173,97 +173,39 @@ public class FieldSetup : MonoBehaviour
         int x, y;
         int xCoor1 = 0;
         int zCoor1 = 0;
-        int xCoor2 = 0;
-        int zCoor2 = 0;
+        //int xCoor2 = 0;
+        //int zCoor2 = 0;
         y = (level+1)*levelHeight;
         x = baseXCoor + scene*gapSize;
         float[] degree = new float[9] {-45f, 90f, 45f, 0f, 0f, 0f, 45f, 90f, -45f};
         //adjust bridge position
         int gapPozi = 10;
 
-        if(step1 == 0||step1 == 3|| step1 == 6){
-            xCoor1 = 20+x-gapPozi;
-        }
-        if(step1 == 1||step1 == 7){
-            xCoor1 = 20+x;
-        }
-        if(step1 == 2||step1 == 5|| step1 == 8){
-            xCoor1 = 20+x+gapPozi;
-        }
-        if(step1 == 0||step1 == 1|| step1 == 2){
-            zCoor1 = 20+baseZCoor-gapPozi;
-        }
-        if(step1 == 3||step1 == 5){
-            zCoor1 = 20+baseZCoor;
-        }
-        if(step1 == 6||step1 == 7|| step1 == 8){
-            zCoor1 = 20+baseZCoor+gapPozi;
-        }
-        if(step2 == 0||step2 == 3|| step2 == 6){
-            xCoor2 = 20+x-gapPozi;
-        }
-        if(step2 == 1||step2 == 7){
-            xCoor2 = 20+x;
-        }
-        if(step2 == 2||step2 == 5|| step2 == 8){
-            xCoor2 = 20+x+gapPozi;
-        }
-        if(step2 == 0||step2 == 1|| step2 == 2){
-            zCoor2 = 20+baseZCoor-gapPozi;
-        }
-        if(step2 == 3||step2 == 5){
-            zCoor2 = 20+baseZCoor;
-        }
-        if(step2 == 6||step2 == 7|| step2 == 8){
-            zCoor2 = 20+baseZCoor+gapPozi;
-        }
-        //Debug.Log("for position: " + step1 + ", xCoor: "+xCoor+", zCoor: "+zCoor);
-
-        /*Debug.Log("two steps are: "+step1+", "+step2);
-        Debug.Log("xCoor1: "+ xCoor1+", zCoor1: "+zCoor1);
-        Debug.Log("xCoor2: "+ xCoor2+", zCoor2: "+zCoor2);*/
-
-        Vector3 posBridge1 = new Vector3(xCoor1, y, zCoor1);
-        Vector3 posBridge2 = new Vector3(xCoor2, y, zCoor2);
-        Quaternion rot = new Quaternion ();
-        GameObject bridge1 = Instantiate(bridge, posBridge1, rot);
-        bridge1.transform.Rotate(0, degree[step1], 0, Space.World);
-        GameObject bridge2 = Instantiate(bridge, posBridge2, rot);
-        bridge2.transform.Rotate(0, degree[step2], 0, Space.World);
-
-    //connect each level
-        int[] saturated = new int [9];
         for(int i = 0; i < 9; i++){
-            saturated[i] = 0;
-        }
-        saturated[step1] = 1;
-        saturated[step2] = 1;
-        int head1 = step1;
-        int head2 = step2;
-        int count = 2;
-        int temp = 0;
-        int r1 = 1;
-        int r2 = 1;
-
-        while(count != 9){
-            temp = CheckNeighbour(head1, saturated, platform, r1);
-            if (temp == 4){
-                r1++;
-            }else{
-                head1 = temp;
-                saturated[head1] = 1;
-                count++;
-            }
-            if(count == 9){
-                break;
-            }
-            temp = CheckNeighbour(head2, saturated, platform, r2);
-            if (temp == 4){
-                r1++;
-            }else{
-                head2 = temp;
-                saturated[head2] = 1;
-                count++;
+            if(platform[i] != 0){
+                step1 = i;
+                if(step1 == 0||step1 == 3|| step1 == 6){
+                    xCoor1 = 20+x-gapPozi;
+                }
+                if(step1 == 1||step1 == 7){
+                    xCoor1 = 20+x;
+                }
+                if(step1 == 2||step1 == 5|| step1 == 8){
+                    xCoor1 = 20+x+gapPozi;
+                }
+                if(step1 == 0||step1 == 1|| step1 == 2){
+                    zCoor1 = 20+baseZCoor-gapPozi;
+                }
+                if(step1 == 3||step1 == 5){
+                    zCoor1 = 20+baseZCoor;
+                }
+                if(step1 == 6||step1 == 7|| step1 == 8){
+                    zCoor1 = 20+baseZCoor+gapPozi;
+                }
+                Vector3 posBridge1 = new Vector3(xCoor1, y, zCoor1);
+                 Quaternion rot = new Quaternion ();
+                GameObject bridge1 = Instantiate(bridge, posBridge1, rot);
+                bridge1.transform.Rotate(0, degree[step1], 0, Space.World);
             }
         }
     }      
@@ -289,6 +231,7 @@ public class FieldSetup : MonoBehaviour
                 ans = posi+r;
 
                 Debug.Log("head: "+ posi+", ans: "+ans);
+                return ans;
             }
         }
         if(posi - r >= 0){
@@ -296,6 +239,7 @@ public class FieldSetup : MonoBehaviour
                 ans = posi+r;
 
                 Debug.Log("head: "+ posi+", ans: "+ans);
+                return ans;
             }
         }
         if(posi+r*3 < 9){
@@ -303,6 +247,7 @@ public class FieldSetup : MonoBehaviour
                 ans = posi+r;
 
                 Debug.Log("head: "+ posi+", ans: "+ans);
+                return ans;
             }
         }
         if(posi-r*3 >= 0){
@@ -310,6 +255,7 @@ public class FieldSetup : MonoBehaviour
                 ans = posi+r;
 
                 Debug.Log("head: "+ posi+", ans: "+ans);
+                return ans;
             }
         }
         
