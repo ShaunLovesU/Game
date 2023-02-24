@@ -1,0 +1,7 @@
+Middle elevator
+Spawn point spin
+      spawn check
+      spawn player
+      destroy all level object
+      regenerate next level
+Collider

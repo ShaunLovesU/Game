@@ -1,0 +1,14 @@
+Middle elevator
+      particle effect
+Spawn point spin
+      spawn check
+      spawn player
+      destroy all level object
+      generate next level
+Trees, collectables
+Collider
+'Waitingroom'
+UI
+      healthbar
+      items duration
+      enemy healthbar

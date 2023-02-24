@@ -173,7 +173,7 @@ public class FieldSetup : MonoBehaviour
             spawnPos = rdm.Next(0, 9);
         }
 
-        Debug.Log("in spawnExitPoint(), spawnPos is: "+ spawnPos);
+        //Debug.Log("in spawnExitPoint(), spawnPos is: "+ spawnPos);
 
         int level = spawnLevel;
         y = (level+1)*levelHeight + 5;
