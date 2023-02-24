@@ -12,7 +12,8 @@ public class FieldSetup : MonoBehaviour
     public GameObject floor;
     public GameObject platformFloor;
     public GameObject wall;
-    public GameObject bridge;
+    public GameObject bridge_center;
+    public GameObject bridge_corner;
     public GameObject connector;
 
     public int baseXCoor = -20;
@@ -22,16 +23,25 @@ public class FieldSetup : MonoBehaviour
 
     public int scene = 0;
 
+    public GameObject spawnPoint;
+    public float spawnTime = 90f;
+    int spawnLevel;
+
+    public int[] platform = new int[9]; 
+    public int[] filler = new int[9]; 
+    public int[] decoration = new int[9]; 
+    public int[,] occupied = new int[3,9];
 
     // Start is called before the first frame update
     void Start()
     {
         System.Random rdm = new System.Random();
+        spawnLevel = rdm.Next(0,3);
 
-        int[] platform = new int[9]; 
+        /*int[] platform = new int[9]; 
         int[] filler = new int[9]; 
         int[] decoration = new int[9]; 
-        int[,] occupied = new int[3,9];
+        int[,] occupied = new int[3,9];*/
 
         //5 scenes
         //for(int k = 0; k < 5; k++){
@@ -95,7 +105,11 @@ public class FieldSetup : MonoBehaviour
 
                 generateField(platform, filler, decoration, i, scene);
                 generateStairs(platform, i, scene);
-            //}
+
+                if(i == spawnLevel){
+                    Invoke("spawnExitPoint", spawnTime);
+                }
+            //}   
         }    
     }
 
@@ -140,34 +154,43 @@ public class FieldSetup : MonoBehaviour
             xCoor = ((i % 3) * 20 + x);
             zCoor = ((i/3)*20 + baseZCoor);
             //Debug.Log("level" + level + " ,position "+i+" occupied, type: "+platform[i]+", xCoor: "+ xCoor+", zCoor: "+zCoor);
-            
+
             Vector3 posPlatform = new Vector3(xCoor, y, zCoor);
             if(platform[i] != 0){
                 GameObject tempPlatform = Instantiate(platformFloor, posPlatform, rot);
-            }      
+            }
         }
+    }
+
+    void spawnExitPoint(){
+        int spawnPos, spawnPosX, spawnPosZ;
+        int x, y;
+
+        //randomly pick a platform for spawnPoint to be on
+        System.Random rdm = new System.Random();
+        spawnPos = rdm.Next(0, 9);
+        while(spawnPos == 4 || platform[spawnPos] == 0){
+            spawnPos = rdm.Next(0, 9);
+        }
+
+        Debug.Log("in spawnExitPoint(), spawnPos is: "+ spawnPos);
+
+        int level = spawnLevel;
+        y = (level+1)*levelHeight + 5;
+        x = baseXCoor;
+                    
+        spawnPosX = ((spawnPos % 3) * 20 + x);
+        spawnPosZ = ((spawnPos/3)*20 + baseZCoor);
+
+        Vector3 posSpawnPoint = new Vector3(spawnPosX, y, spawnPosZ);
+        Quaternion rot = new Quaternion ();
+        Instantiate(spawnPoint, posSpawnPoint, rot);   
     }
 
 
     void generateStairs(int [] platform, int level, int scene)
     {
         Debug.Log("in generateStairs()");
-        //Debug.Log("level: "+ level);
-
-    //pick two platforms to connect to the 'elevator'
-        System.Random rdm = new System.Random();
-        int step1 = 4;
-        int step2 = 4;
-        //Debug.Log(platform.Length);
-        step1 = rdm.Next(0,9);
-        //Debug.Log(step1);
-        while(platform[step1] == 0){
-            step1 = rdm.Next(0,9);
-        }
-        step2 = rdm.Next(0,9);
-        while(platform[step2] == 0 || step2 == step1){
-            step2 = rdm.Next(0,9);
-        }
 
     //add bridge from platforms to 'elevator'
         int x, y;
@@ -181,6 +204,7 @@ public class FieldSetup : MonoBehaviour
         //adjust bridge position
         int gapPozi = 10;
 
+        int step1;
         for(int i = 0; i < 9; i++){
             if(platform[i] != 0){
                 step1 = i;
@@ -203,65 +227,17 @@ public class FieldSetup : MonoBehaviour
                     zCoor1 = 20+baseZCoor+gapPozi;
                 }
                 Vector3 posBridge1 = new Vector3(xCoor1, y, zCoor1);
-                 Quaternion rot = new Quaternion ();
-                GameObject bridge1 = Instantiate(bridge, posBridge1, rot);
+                Quaternion rot = new Quaternion ();
+                GameObject bridge1;
+                if(i == 1||i == 3||i == 5||i == 7){
+                    bridge1 = Instantiate(bridge_center, posBridge1, rot);
+                }else{
+                    bridge1 = Instantiate(bridge_corner, posBridge1, rot);
+                }
                 bridge1.transform.Rotate(0, degree[step1], 0, Space.World);
             }
         }
     }      
-
-
-    //return which platform on level level-1 should the stair starts from level level platform i points to
-    int CheckNeighbour(int posi, int[] saturated, int[] platform, int r)
-    {
-        Debug.Log("in CheckNeighbour");
-        //int r = 1;
-        int ans = 4;
-
-        int i_x = r%3;
-        //int i_z = i/3;
-        int posi_x = posi%3;
-        //int pozi_z = i/3;
-        /*if((i == posi+1 && i_x > posi_x)||(i == posi-1 && i_x < posi_x)||(i == posi-3 && i_x == posi_x)||(i == posi+3 && i_x == posi_x)){
-            ans = i;
-            break;
-        }*/
-        if(posi+r < 9){
-            if(saturated[posi+r] != 1 && platform[posi+r] != 0 && i_x > posi_x){
-                ans = posi+r;
-
-                Debug.Log("head: "+ posi+", ans: "+ans);
-                return ans;
-            }
-        }
-        if(posi - r >= 0){
-            if(saturated[posi-r] != 1 && platform[posi-r] != 0 && i_x < posi_x){
-                ans = posi+r;
-
-                Debug.Log("head: "+ posi+", ans: "+ans);
-                return ans;
-            }
-        }
-        if(posi+r*3 < 9){
-            if(saturated[posi+r*3] != 1 && platform[posi+r*3] != 0 && i_x == posi_x){
-                ans = posi+r;
-
-                Debug.Log("head: "+ posi+", ans: "+ans);
-                return ans;
-            }
-        }
-        if(posi-r*3 >= 0){
-            if(saturated[posi-r*3] != 1 && platform[posi-r*3] != 0 && i_x == posi_x){
-                ans = posi+r;
-
-                Debug.Log("head: "+ posi+", ans: "+ans);
-                return ans;
-            }
-        }
-        
-
-        return ans;
-    }
 
 
     int CheatRdm()
